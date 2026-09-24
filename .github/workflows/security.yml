@@ -1,0 +1,38 @@
+name: Security checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  repository-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Check for obvious committed secrets
+        run: bash scripts/check-secrets.sh
+
+      - name: Validate Agent Skill metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          skill="skills/agent-kaizen/SKILL.md"
+
+          test -f "$skill"
+          head -n 1 "$skill" | grep -qx -- '---'
+          grep -q '^name: agent-kaizen$' "$skill"
+          grep -q '^description: ' "$skill"
+          grep -q '^license: MIT$' "$skill"
+
+          echo "Skill metadata check passed."
