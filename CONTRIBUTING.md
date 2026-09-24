@@ -21,7 +21,7 @@ Keep the framework:
 
 1. **Evidence-first.** Start from observed work rather than generic AI brainstorming.
 2. **Model-agnostic.** Do not assume one model/provider.
-3. **Tool-agnostic.** Runtime examples are welcome; core rules should transfer.
+3. **Hermes-first for v0.1.** Keep the current implementation focused on Hermes Agent. Avoid runtime abstractions until a second runtime is actually being added.
 4. **Safety-by-construction.** Do not solve convenience problems by granting broad persistent authority.
 5. **Progressive.** Prefer the smallest useful autonomy increase.
 6. **Measurable.** An automation should have a success/failure signal.

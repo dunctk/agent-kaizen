@@ -1,181 +1,176 @@
 # Agent Kaizen
 
+> **v0.1 scope: Hermes Agent.**
+>
+> Agent Kaizen is starting deliberately narrow. The first target is a Hermes installation: discover the Hermes agents/profiles on a machine, find the scheduled agents/jobs, locate their session history and operational logs, then use that evidence to identify the next useful improvement.
+
+Agent Kaizen is a continuous-improvement loop for **Hermes agents**:
+
+> discover → observe → find friction / AI whitespace → investigate → improve → measure → ratchet
+
+The broader framework may support other agent runtimes later. For now, **Hermes is the product surface and the word we use in the docs and CLI.**
+
+## First capability: discovery
+
+Before Agent Kaizen recommends anything, it should know what is actually running.
+
+The CLI discovers:
+
+- the default Hermes home;
+- named Hermes profiles (each is an isolated Hermes agent environment);
+- every profile's `state.db` session store;
+- Hermes log files;
+- cron definitions in each profile;
+- which cron jobs are active/paused/completed;
+- schedules, next-run metadata, workdirs and model/provider overrides when present;
+- stored cron-run output.
+
+```bash
+agent-kaizen discover
+```
+
+Example shape:
+
+```text
+Hermes root: /home/me/.hermes
+Profiles found: 3
+
+[default] /home/me/.hermes
+  sessions: /home/me/.hermes/state.db (412.7MB)
+  logs:     4 file(s)
+  cron:     5 job(s), 4 active, 3 recurring
+    ● 7c1...  every 1h  scheduled  Research monitor
+
+[coder] /home/me/.hermes/profiles/coder
+  ...
+```
+
+Machine-readable discovery is available for agents:
+
+```bash
+agent-kaizen discover --json
+agent-kaizen discover --profile coder --json
+```
+
+`HERMES_HOME` is respected. You can also point discovery somewhere explicitly:
+
+```bash
+agent-kaizen --hermes-home /srv/hermes discover
+```
+
+## Evidence search
+
+Discovery is only useful if the Kaizen agent can cheaply retrieve relevant evidence rather than pouring entire log files or databases into a model context.
+
+```bash
+agent-kaizen search "manual intervention"
+agent-kaizen search "timeout" --profile coder
+agent-kaizen search "rate limit" --source logs
+agent-kaizen search "research monitor" --source cron
+agent-kaizen search "customer handoff" --source sessions --json
+```
+
+The initial search strategy is intentionally simple and local:
+
+| Evidence | Search path |
+| --- | --- |
+| Hermes conversations | SQLite FTS5 in `state.db` |
+| Operational logs | `rg` / ripgrep when installed; Python literal-search fallback |
+| Cron definitions | parsed `cron/jobs.json` |
+| Cron run artifacts | `rg` over `cron/output/`; Python fallback |
+
+This is preferable to feeding large logs to an LLM. **Retrieve first, reason second.** Semantic reranking can be added later when literal/full-text retrieval is insufficient.
+
+## CLI installation
+
+The CLI has no runtime dependencies beyond Python 3.10+.
+
+From a clone:
+
+```bash
+PYTHONPATH=src python3 -m agent_kaizen.cli discover
+```
+
+Or install it as a Python tool:
+
+```bash
+uv tool install git+https://github.com/dunctk/agent-kaizen
+agent-kaizen discover
+```
+
+The Agent Skill remains installable separately:
+
 ```bash
 npx skills add dunctk/agent-kaizen
 ```
 
-A continuous-improvement framework for finding the **next useful place for AI** in real work — without giving agents unlimited access or automating things before they are understood.
+## What happens after discovery?
 
-Agent Kaizen turns everyday human + agent activity into a repeatable loop:
+The discovery/search layer gives the Kaizen pass evidence to ask:
 
-> observe the work → find AI whitespace → investigate → prototype safely → decide approval boundaries → automate → measure → ratchet
+- Which Hermes agents are actually active?
+- Which scheduled jobs run repeatedly?
+- What fails or retries repeatedly?
+- Where does the user step in manually?
+- What is expensive or slow?
+- What does Hermes repeatedly have to rediscover?
+- Where is useful work happening with no AI support?
+- Is the next improvement a prompt change, skill, cron change, workflow, test, or software change?
 
-It is designed for recurring use by general-purpose agents such as Hermes, Claude Code, Codex, Cursor, OpenCode, and other agent systems.
+The important constraint is that **observation is read-only**. Discovery must not add connectors, expand permissions, change schedules, spend money, or modify production state.
 
-## Why this exists
+## Relationship to Workflow Kaizen
 
-Most teams ask:
-
-> “What can we automate with AI?”
-
-That question is too broad. Agent Kaizen starts from observed work instead:
-
-- What happened today?
-- What consumed human attention?
-- Where was AI already useful?
-- Where was **nothing being done by AI**?
-- What was difficult, repetitive, slow, expensive, error-prone, or cognitively draining?
-- Which parts required genuine human judgment?
-- What could be investigated or prototyped without production access?
-- What should require approval before an agent can act?
-- What should become software rather than another prompt?
-
-The goal is not maximum automation. The goal is **progressively better allocation of human judgment and machine capability**.
-
-## The loop
-
-```text
-OBSERVE
-  ↓
-MAP THE WORK
-  ↓
-FIND AI WHITESPACE
-  ↓
-ASSESS VALUE + DIFFICULTY + RISK
-  ↓
-INVESTIGATE / PRACTISE
-  ↓
-PROTOTYPE SAFELY
-  ↓
-DEFINE APPROVAL + PERMISSION BOUNDARIES
-  ↓
-AUTOMATE THE RIGHT LAYER
-  ↓
-MEASURE
-  ↓
-RATCHET
-  ↺
-```
-
-Investigation and sandbox prototyping do **not** need to wait for production approval. Approval is required before crossing defined trust boundaries such as privileged data access, external side effects, spend, publishing, destructive actions, or production activation.
-
-## Two related projects
-
-### Agent Kaizen
-
-This repository is the broader discovery and governance loop. It asks **what should AI do next, at what level of autonomy, and under what safety boundary?**
-
-### [Workflow Kaizen](https://github.com/dunctk/workflow-kaizen)
-
-Workflow Kaizen starts after real execution/debugging and asks **what did we learn that should become durable code, tests, recovery logic, state, configuration, or agent documentation?**
-
-A common flow is:
+[Workflow Kaizen](https://github.com/dunctk/workflow-kaizen) is downstream.
 
 ```text
 Agent Kaizen
-    ↓ identifies a worthwhile automation
-prototype / implementation
-    ↓
-real-world execution
-    ↓
+  discover Hermes + inspect evidence
+        ↓
+  identify the next improvement
+        ↓
+  prototype / implement / run
+        ↓
 Workflow Kaizen
-    ↓ reconciles interventions and failures
-more reliable automation
+  reconcile manual rescue + failures
+  into durable code/tests/state/docs
 ```
 
-## Install
+Agent Kaizen asks:
 
-```bash
-npx skills add dunctk/agent-kaizen
-```
+> **What should this Hermes setup improve next?**
 
-Or:
+Workflow Kaizen asks:
 
-```bash
-npx skills add dunctk/agent-kaizen --skill agent-kaizen
-```
-
-## Daily Hermes-style use
-
-At the end of a day or after an agent stand-up:
-
-```text
-Run agent-kaizen over today's work.
-
-Look for:
-- repeated human effort;
-- repeated agent effort;
-- manual interventions;
-- untouched AI opportunities;
-- difficult or expensive steps;
-- approval bottlenecks;
-- unsafe or over-privileged automation;
-- opportunities that should graduate from prompt → skill → workflow → software.
-
-Do not connect new systems, request broader permissions, spend money,
-publish externally, or make destructive changes merely to investigate.
-```
-
-The output should be a small number of evidence-backed opportunities, not an enormous AI wishlist.
-
-## Autonomy ladder
-
-Agent Kaizen uses a simple graduation model:
-
-| Level | Mode | Human role |
-| --- | --- | --- |
-| 0 | Human/manual | Does the work |
-| 1 | AI suggests | Reviews suggestion |
-| 2 | AI drafts/executes in sandbox | Reviews result |
-| 3 | AI acts with approval | Approves consequential action |
-| 4 | AI acts inside explicit guardrails | Handles exceptions |
-| 5 | Monitored autonomous system | Sets policy, audits outcomes |
-
-Do not jump levels merely because a model can technically perform the task.
+> **What did this real execution teach the workflow that it should know permanently?**
 
 ## Security posture
 
-Agent Kaizen is **default-deny** about capabilities.
+Discovery and evidence search are read-only. Agent Kaizen is default-deny about new authority: no new credentials, connectors, write scopes, production mutations, publishing, spend, or destructive actions merely to investigate an opportunity.
 
-An agent should not gain a connector, credential, write scope, production environment, payment capability, or destructive tool simply because it would make an experiment easier.
-
-Core rules:
-
-- least privilege;
-- explicit tool/connector allowlists;
-- read-only before write access;
-- sandbox/dry-run before production;
-- separate investigation from activation;
-- explicit spend/rate limits;
-- reversible/idempotent actions where possible;
-- auditability;
-- no secrets in prompts, logs, fixtures, examples, or commits;
-- human approval at defined consequence boundaries;
-- a kill switch / disable path for autonomous systems.
-
-See [SECURITY.md](SECURITY.md) and the skill's [safety reference](skills/agent-kaizen/references/safety.md).
+See [SECURITY.md](SECURITY.md) and [`skills/agent-kaizen/references/safety.md`](skills/agent-kaizen/references/safety.md).
 
 ## Repository layout
 
 ```text
 agent-kaizen/
+├── pyproject.toml
+├── src/agent_kaizen/
+│   ├── cli.py
+│   ├── hermes.py
+│   └── search.py
+├── tests/
+│   └── test_discovery.py
+├── skills/agent-kaizen/
+│   ├── SKILL.md
+│   └── references/
+│       ├── hermes-discovery.md
+│       ├── hermes-daily.md
+│       ├── framework.md
+│       └── safety.md
 ├── README.md
-├── LICENSE
 ├── SECURITY.md
-├── CONTRIBUTING.md
-├── AGENTS.md
-├── scripts/
-│   └── check-secrets.sh
-├── .github/
-│   └── workflows/
-│       └── security.yml
-└── skills/
-    └── agent-kaizen/
-        ├── SKILL.md
-        └── references/
-            ├── framework.md
-            ├── safety.md
-            └── hermes-daily.md
+└── LICENSE
 ```
 
 ## License

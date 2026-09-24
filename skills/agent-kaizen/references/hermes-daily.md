@@ -4,6 +4,15 @@ This pattern is for a persistent general-purpose agent that sees enough of day-t
 
 Do **not** interpret persistence as blanket authority.
 
+
+Before the review, use the Hermes discovery layer to identify profiles, scheduled jobs and evidence stores:
+
+```bash
+agent-kaizen discover --json
+```
+
+Then use targeted `agent-kaizen search` queries rather than loading complete session databases or log trees into context.
+
 ## Daily scan
 
 Run after a meaningful work period, not continuously after every tiny interaction.

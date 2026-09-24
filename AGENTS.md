@@ -6,7 +6,7 @@ This repository defines **Agent Kaizen**: a reusable framework/skill for continu
 
 ## Non-negotiable rules
 
-- Keep the core framework model/provider/runtime agnostic.
+- **v0.1 is Hermes-first.** Do not add other agent runtimes yet. Keep model/provider choices agnostic inside Hermes.
 - Start from evidence of real work; do not turn the skill into a generic automation brainstormer.
 - Default-deny new capabilities. Do not grant connectors, credentials, scopes, write access, spend, publishing, destructive operations, or production activation merely to explore an opportunity.
 - Investigation may proceed with existing authorized evidence, public information, mocks, fixtures, synthetic data, or sandboxes.
@@ -20,7 +20,8 @@ This repository defines **Agent Kaizen**: a reusable framework/skill for continu
 - `skills/agent-kaizen/SKILL.md` — executable skill instructions.
 - `skills/agent-kaizen/references/framework.md` — detailed opportunity and graduation framework.
 - `skills/agent-kaizen/references/safety.md` — permission, approval, and agent-safety rules.
-- `skills/agent-kaizen/references/hermes-daily.md` — recurring Hermes-style usage.
+- `skills/agent-kaizen/references/hermes-discovery.md` — Hermes profile/cron/log/session discovery and retrieval rules.
+- `skills/agent-kaizen/references/hermes-daily.md` — recurring Hermes usage.
 - `SECURITY.md` — repository and runtime security posture.
 
 When changing the framework, update the canonical skill/reference first, then keep README examples aligned.
@@ -31,6 +32,7 @@ Run:
 
 ```bash
 bash scripts/check-secrets.sh
+PYTHONPATH=src python3 -m unittest discover -s tests -v
 ```
 
 Also inspect documentation links and ensure the skill remains installable from `skills/agent-kaizen/`.

@@ -23,6 +23,11 @@ jobs:
       - name: Check for obvious committed secrets
         run: bash scripts/check-secrets.sh
 
+      - name: Test Hermes discovery and search
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v
+
       - name: Validate Agent Skill metadata
         shell: bash
         run: |

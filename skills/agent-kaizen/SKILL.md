@@ -6,6 +6,26 @@ license: MIT
 
 # Agent Kaizen
 
+## Scope: Hermes first
+
+Agent Kaizen v0.1 targets **Hermes Agent**. Treat each Hermes profile as an isolated agent environment with its own session history, logs, skills and cron store.
+
+Before a Kaizen review, discover the Hermes estate unless the relevant profile is already known:
+
+```bash
+agent-kaizen discover --json
+```
+
+Retrieve only the evidence needed for the question:
+
+```bash
+agent-kaizen search "manual intervention"
+agent-kaizen search "timeout" --profile coder
+agent-kaizen search "delivery failed" --source logs
+```
+
+Use `references/hermes-discovery.md` for the discovery/storage/search contract. Do not add support for other agent runtimes yet.
+
 Improve how work is allocated between humans, agents, and software.
 
 Do not begin with:
