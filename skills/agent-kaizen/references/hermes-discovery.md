@@ -113,9 +113,21 @@ agent-kaizen search "timeout"
 agent-kaizen search "manual intervention" --source sessions
 agent-kaizen search "delivery failed" --source logs
 agent-kaizen search "daily brief" --source cron
+agent-kaizen inspect
+agent-kaizen inspect --days 30 --profile researcher --json
 ```
 
 Use `--profile NAME` to narrow a fleet-wide scan.
+
+### Inspect
+
+`inspect` is a bounded, read-only aggregation pass over the discovered Hermes estate. It summarizes recent session activity, model/cost metadata, cron output artifacts, and heuristic evidence for failures, manual intervention, and approval/review boundaries.
+
+The default lookback is 7 days.
+
+Do not interpret a keyword hit as a confirmed incident. The summary exists to prioritize deeper evidence retrieval.
+
+Do not treat cron output artifact counts as exact execution counts. Hermes may suppress delivery/output for a run.
 
 ## Future retrieval improvements
 
@@ -123,11 +135,10 @@ Only add heavier retrieval when evidence shows the current approach misses usefu
 
 Possible later layers:
 
-1. time-window filtering;
-2. structured error/event extraction;
-3. cron-run correlation with session IDs;
-4. tool-call / model-cost summaries;
-5. semantic reranking of FTS/ripgrep candidates;
-6. compact local index of recurring failure/intervention patterns.
+1. structured error/event extraction beyond keyword heuristics;
+2. exact cron-run correlation with session IDs and scheduler events;
+3. per-job model/tool/cost attribution;
+4. semantic reranking of FTS/ripgrep candidates;
+5. compact local index of recurring failure/intervention patterns.
 
 Do not begin with embeddings/vector infrastructure merely because it is available. Literal + FTS retrieval is cheaper, inspectable, and already sufficient for many Kaizen questions.
