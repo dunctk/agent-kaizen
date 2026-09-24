@@ -81,6 +81,50 @@ The initial search strategy is intentionally simple and local:
 
 This is preferable to feeding large logs to an LLM. **Retrieve first, reason second.** Semantic reranking can be added later when literal/full-text retrieval is insufficient.
 
+## Inspect recent Hermes activity
+
+`inspect` turns discovery + retrieval into a compact Kaizen evidence report.
+
+```bash
+agent-kaizen inspect
+agent-kaizen inspect --days 1
+agent-kaizen inspect --days 30 --profile researcher
+agent-kaizen inspect --json
+```
+
+By default it reviews the last 7 days and reports, per Hermes profile:
+
+- total recent sessions and how many have `source='cron'`;
+- message/tool/API-call counts when the Hermes schema exposes them;
+- estimated/actual session cost when available;
+- models used;
+- recent cron **output artifacts** per configured job;
+- failure/error/retry signal counts;
+- manual-intervention/workaround signal counts;
+- approval/review signal counts;
+- a small evidence sample;
+- cron jobs worth inspecting first because their recent output contains repeated failure or intervention signals.
+
+The signal counts are **retrieval heuristics, not verdicts**. A line containing "retry" is evidence to inspect, not proof that the workflow is broken.
+
+Cron output artifacts are also not presented as an exact execution counter. Hermes can suppress delivery/output, so exact run accounting will require scheduler/session correlation in a later iteration.
+
+Example shape:
+
+```text
+Hermes inspection: last 7 day(s)
+
+[researcher]
+  sessions: 84 total, 61 cron | messages=912 tools=231 api_calls=144 cost~$3.8400
+  session signals: failure=14 manual=6 approval=3
+  log signals:     failure=8 manual=0 approval=0
+  cron:
+    ! market-watch  Market watch | every 1h | scheduled | outputs=121 failure=9 manual=2 approval=0
+    - daily-brief   Daily brief  | every 1d | scheduled | outputs=7 failure=0 manual=0 approval=1
+  attention:
+    - Market watch (market-watch): 9 failure signal line(s); 2 manual-intervention signal line(s)
+```
+
 ## CLI installation
 
 The CLI has no runtime dependencies beyond Python 3.10+.
@@ -106,7 +150,7 @@ npx skills add dunctk/agent-kaizen
 
 ## What happens after discovery?
 
-The discovery/search layer gives the Kaizen pass evidence to ask:
+The discovery/search/inspect layer gives the Kaizen pass evidence to ask:
 
 - Which Hermes agents are actually active?
 - Which scheduled jobs run repeatedly?
@@ -158,6 +202,7 @@ agent-kaizen/
 ├── src/agent_kaizen/
 │   ├── cli.py
 │   ├── hermes.py
+│   ├── inspect.py
 │   └── search.py
 ├── tests/
 │   └── test_discovery.py
