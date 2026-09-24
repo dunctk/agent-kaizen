@@ -22,7 +22,10 @@ Retrieve only the evidence needed for the question:
 agent-kaizen search "manual intervention"
 agent-kaizen search "timeout" --profile coder
 agent-kaizen search "delivery failed" --source logs
+agent-kaizen inspect --days 7
 ```
+
+Use `inspect` as the normal first-pass evidence summary after discovery, then use targeted `search` queries to investigate interesting signals.
 
 Use `references/hermes-discovery.md` for the discovery/storage/search contract. Do not add support for other agent runtimes yet.
 
