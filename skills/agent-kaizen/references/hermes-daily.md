@@ -9,9 +9,12 @@ Before the review, use the Hermes discovery layer to identify profiles, schedule
 
 ```bash
 agent-kaizen discover --json
+agent-kaizen inspect --days 1 --json
 ```
 
-Then use targeted `agent-kaizen search` queries rather than loading complete session databases or log trees into context.
+For a weekly review use `agent-kaizen inspect --days 7 --json`.
+
+Treat inspect's failure/manual/approval counts as retrieval signals, not conclusions. Use targeted `agent-kaizen search` queries to inspect evidence rather than loading complete session databases or log trees into context.
 
 ## Daily scan
 
